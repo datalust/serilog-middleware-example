@@ -1,2 +1,4 @@
-# serilog-middleware-example
-An example ASP.NET Core app with smart request logging middleware
+# Serilog Middleware Example for ASP.NET Core
+
+An example ASP.NET Core app with smart request logging middleware.
+
