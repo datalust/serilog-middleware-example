@@ -2,7 +2,6 @@
 using Serilog;
 using Serilog.Events;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -27,28 +26,26 @@ namespace Datalust.SerilogMiddlewareExample.Diagnostics
         {
             if (httpContext == null) throw new ArgumentNullException(nameof(httpContext));
 
-            var sw = Stopwatch.StartNew();
+            var start = Stopwatch.GetTimestamp();
             try
             {
                 await _next(httpContext);
-                sw.Stop();
+                var elapsedMs = GetElapsedMilliseconds(start, Stopwatch.GetTimestamp());
 
                 var statusCode = httpContext.Response?.StatusCode;
                 var level = statusCode > 499 ? LogEventLevel.Error : LogEventLevel.Information;
 
                 var log = level == LogEventLevel.Error ? LogForErrorContext(httpContext) : Log;
-                log.Write(level, MessageTemplate, httpContext.Request.Method, httpContext.Request.Path, statusCode, sw.Elapsed.TotalMilliseconds);
+                log.Write(level, MessageTemplate, httpContext.Request.Method, httpContext.Request.Path, statusCode, elapsedMs);
             }
             // Never caught, because `LogException()` returns false.
-            catch (Exception ex) when (LogException(httpContext, sw, ex)) { }
+            catch (Exception ex) when (LogException(httpContext, GetElapsedMilliseconds(start, Stopwatch.GetTimestamp()), ex)) { }
         }
 
-        static bool LogException(HttpContext httpContext, Stopwatch sw, Exception ex)
+        static bool LogException(HttpContext httpContext, double elapsedMs, Exception ex)
         {
-            sw.Stop();
-
             LogForErrorContext(httpContext)
-                .Error(ex, MessageTemplate, httpContext.Request.Method, httpContext.Request.Path, 500, sw.Elapsed.TotalMilliseconds);
+                .Error(ex, MessageTemplate, httpContext.Request.Method, httpContext.Request.Path, 500, elapsedMs);
 
             return false;
         }
@@ -66,6 +63,11 @@ namespace Datalust.SerilogMiddlewareExample.Diagnostics
                 result = result.ForContext("RequestForm", request.Form.ToDictionary(v => v.Key, v => v.Value.ToString()));
 
             return result;
+        }
+
+        static double GetElapsedMilliseconds(long start, long stop)
+        {
+            return (stop - start) * 1000 / (double)Stopwatch.Frequency;
         }
     }
 }
