@@ -8,49 +8,50 @@ using System.Threading.Tasks;
 
 namespace Datalust.SerilogMiddlewareExample.Diagnostics
 {
-    class SerilogMiddleware
+    public class SerilogMiddleware
     {
-        const string MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+        private const string MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
 
-        static readonly ILogger Log = Serilog.Log.ForContext<SerilogMiddleware>();
+        private static readonly ILogger Log = Serilog.Log.ForContext<SerilogMiddleware>();
 
-        readonly RequestDelegate _next;
+        private readonly RequestDelegate _next;
 
         public SerilogMiddleware(RequestDelegate next)
         {
-            if (next == null) throw new ArgumentNullException(nameof(next));
-            _next = next;
+            _next = next ?? throw new ArgumentNullException(nameof(next));
         }
 
         public async Task Invoke(HttpContext httpContext)
         {
             if (httpContext == null) throw new ArgumentNullException(nameof(httpContext));
 
-            var start = Stopwatch.GetTimestamp();
+            var sw = Stopwatch.StartNew();
             try
             {
                 await _next(httpContext);
-                var elapsedMs = GetElapsedMilliseconds(start, Stopwatch.GetTimestamp());
+                sw.Stop();
 
                 var statusCode = httpContext.Response?.StatusCode;
                 var level = statusCode > 499 ? LogEventLevel.Error : LogEventLevel.Information;
 
                 var log = level == LogEventLevel.Error ? LogForErrorContext(httpContext) : Log;
-                log.Write(level, MessageTemplate, httpContext.Request.Method, httpContext.Request.Path, statusCode, elapsedMs);
+                log.Write(level, MessageTemplate, httpContext.Request.Method, GetPath(httpContext), statusCode, sw.Elapsed.TotalMilliseconds);
             }
-            // Never caught, because `LogException()` returns false.
-            catch (Exception ex) when (LogException(httpContext, GetElapsedMilliseconds(start, Stopwatch.GetTimestamp()), ex)) { }
+            // Never caught, because LogException() returns false.
+            catch (Exception ex) when (LogException(httpContext, sw, ex)) { }
         }
 
-        static bool LogException(HttpContext httpContext, double elapsedMs, Exception ex)
+        private static bool LogException(HttpContext httpContext, Stopwatch sw, Exception ex)
         {
+            sw.Stop();
+
             LogForErrorContext(httpContext)
-                .Error(ex, MessageTemplate, httpContext.Request.Method, httpContext.Request.Path, 500, elapsedMs);
+                .Error(ex, MessageTemplate, httpContext.Request.Method, GetPath(httpContext), 500, sw.Elapsed.TotalMilliseconds);
 
             return false;
         }
 
-        static ILogger LogForErrorContext(HttpContext httpContext)
+        private static ILogger LogForErrorContext(HttpContext httpContext)
         {
             var request = httpContext.Request;
 
@@ -65,9 +66,10 @@ namespace Datalust.SerilogMiddlewareExample.Diagnostics
             return result;
         }
 
-        static double GetElapsedMilliseconds(long start, long stop)
+        private static PathString GetPath(HttpContext httpContext)
         {
-            return (stop - start) * 1000 / (double)Stopwatch.Frequency;
+            var rawTarget = httpContext.Features.Get<IHttpRequestFeature>()?.RawTarget;
+            return rawTarget != null ? new PathString(rawTarget) : httpContext.Request.Path;
         }
     }
 }
