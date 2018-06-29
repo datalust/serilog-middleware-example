@@ -72,9 +72,7 @@ namespace Datalust.SerilogMiddlewareExample.Diagnostics
         
         private static PathString GetPath(HttpContext httpContext)
         {
-            var rawTarget = httpContext.Features.Get<IHttpRequestFeature>()?.RawTarget;
-            
-            return rawTarget ?? httpContext.Request.Path.ToString();
+            return httpContext.Features.Get<IHttpRequestFeature>()?.RawTarget ?? httpContext.Request.Path.ToString();
         }
     }
 }
