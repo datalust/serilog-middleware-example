@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Serilog;
 using Serilog.Events;
 using System;
@@ -36,7 +36,7 @@ namespace Datalust.SerilogMiddlewareExample.Diagnostics
                 var level = statusCode > 499 ? LogEventLevel.Error : LogEventLevel.Information;
 
                 var log = level == LogEventLevel.Error ? LogForErrorContext(httpContext) : Log;
-                log.Write(level, MessageTemplate, httpContext.Request.Method, httpContext.Request.Path, statusCode, elapsedMs);
+                log.Write(level, MessageTemplate, httpContext.Request.Method, GetPath(httpContext), statusCode, elapsedMs);
             }
             // Never caught, because `LogException()` returns false.
             catch (Exception ex) when (LogException(httpContext, GetElapsedMilliseconds(start, Stopwatch.GetTimestamp()), ex)) { }
@@ -45,7 +45,7 @@ namespace Datalust.SerilogMiddlewareExample.Diagnostics
         static bool LogException(HttpContext httpContext, double elapsedMs, Exception ex)
         {
             LogForErrorContext(httpContext)
-                .Error(ex, MessageTemplate, httpContext.Request.Method, httpContext.Request.Path, 500, elapsedMs);
+                .Error(ex, MessageTemplate, httpContext.Request.Method, GetPath(httpContext), 500, elapsedMs);
 
             return false;
         }
@@ -68,6 +68,11 @@ namespace Datalust.SerilogMiddlewareExample.Diagnostics
         static double GetElapsedMilliseconds(long start, long stop)
         {
             return (stop - start) * 1000 / (double)Stopwatch.Frequency;
+        }
+        
+        private static PathString GetPath(HttpContext httpContext)
+        {
+            return httpContext.Features.Get<IHttpRequestFeature>()?.RawTarget ?? httpContext.Request.Path.ToString();
         }
     }
 }
