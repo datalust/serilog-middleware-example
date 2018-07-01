@@ -70,7 +70,7 @@ namespace Datalust.SerilogMiddlewareExample.Diagnostics
             return (stop - start) * 1000 / (double)Stopwatch.Frequency;
         }
         
-        private static PathString GetPath(HttpContext httpContext)
+        static string GetPath(HttpContext httpContext)
         {
             return httpContext.Features.Get<IHttpRequestFeature>()?.RawTarget ?? httpContext.Request.Path.ToString();
         }
