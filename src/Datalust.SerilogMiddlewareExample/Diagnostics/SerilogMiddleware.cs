@@ -2,9 +2,11 @@ using Microsoft.AspNetCore.Http;
 using Serilog;
 using Serilog.Events;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace Datalust.SerilogMiddlewareExample.Diagnostics
 {
@@ -14,14 +16,16 @@ namespace Datalust.SerilogMiddlewareExample.Diagnostics
 
         static readonly ILogger Log = Serilog.Log.ForContext<SerilogMiddleware>();
 
+        static readonly HashSet<string> HeaderWhitelist = new HashSet<string> {"Content-Type", "Content-Length", "User-Agent"};
+
         readonly RequestDelegate _next;
 
         public SerilogMiddleware(RequestDelegate next)
         {
-            if (next == null) throw new ArgumentNullException(nameof(next));
-            _next = next;
+            _next = next ?? throw new ArgumentNullException(nameof(next));
         }
 
+        // ReSharper disable once UnusedMember.Global
         public async Task Invoke(HttpContext httpContext)
         {
             if (httpContext == null) throw new ArgumentNullException(nameof(httpContext));
@@ -54,13 +58,14 @@ namespace Datalust.SerilogMiddlewareExample.Diagnostics
         {
             var request = httpContext.Request;
 
+            var loggedHeaders = request.Headers
+                .Where(h => HeaderWhitelist.Contains(h.Key))
+                .ToDictionary(h => h.Key, h => h.Value.ToString());
+
             var result = Log
-                .ForContext("RequestHeaders", request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString()), destructureObjects: true)
+                .ForContext("RequestHeaders", loggedHeaders, destructureObjects: true)
                 .ForContext("RequestHost", request.Host)
                 .ForContext("RequestProtocol", request.Protocol);
-
-            if (request.HasFormContentType)
-                result = result.ForContext("RequestForm", request.Form.ToDictionary(v => v.Key, v => v.Value.ToString()));
 
             return result;
         }

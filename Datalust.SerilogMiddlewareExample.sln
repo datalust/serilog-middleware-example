@@ -1,19 +1,18 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2026
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{12FF83D4-7737-4342-97F7-F2887C7AE8F0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "global", "global", "{6521B837-CDCB-46D7-AC68-8ADF5D0CEED9}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
-		global.json = global.json
 		LICENSE = LICENSE
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Datalust.SerilogMiddlewareExample", "src\Datalust.SerilogMiddlewareExample\Datalust.SerilogMiddlewareExample.xproj", "{4A2541FD-BFF8-405A-A73D-66822BF18DAB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datalust.SerilogMiddlewareExample", "src\Datalust.SerilogMiddlewareExample\Datalust.SerilogMiddlewareExample.csproj", "{4A2541FD-BFF8-405A-A73D-66822BF18DAB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,5 +30,8 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{4A2541FD-BFF8-405A-A73D-66822BF18DAB} = {12FF83D4-7737-4342-97F7-F2887C7AE8F0}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5A1A32A4-3782-48A5-B89F-788A7351295D}
 	EndGlobalSection
 EndGlobal
